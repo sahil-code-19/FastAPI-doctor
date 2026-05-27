@@ -1,0 +1,13 @@
+[project]
+name = "fastapi-doctor"
+version = "0.1.0"
+description = "Diagnose FastAPI codebases for best practices"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+fastapi-doctor = "fastapi_doctor.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

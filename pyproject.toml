@@ -1,0 +1,21 @@
+[project]
+name = "fastapi-doctor-workspace"
+version = "0.1.0"
+description = "Monorepo for fastapi-doctor"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.136.3",
+]
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["packages/fastapi-doctor/tests"]
+python_files = "test_*.py"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
