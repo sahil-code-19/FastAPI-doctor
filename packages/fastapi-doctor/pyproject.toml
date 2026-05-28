@@ -2,8 +2,26 @@
 name = "fastapi-doctor"
 version = "0.1.0"
 description = "Diagnose FastAPI codebases for best practices"
+readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.12"
 dependencies = []
+authors = [
+    { name = "Sahil Koshti", email = "koshtisahil02@gmail.com" },
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Testing",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Framework :: FastAPI",
+]
+
+[project.urls]
+Homepage = "https://github.com/sahil-code-19/FastAPI-doctor"
+Repository = "https://github.com/sahil-code-19/FastAPI-doctor"
 
 [project.scripts]
 fastapi-doctor = "fastapi_doctor.cli:main"
@@ -11,3 +29,6 @@ fastapi-doctor = "fastapi_doctor.cli:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fastapi_doctor"]
