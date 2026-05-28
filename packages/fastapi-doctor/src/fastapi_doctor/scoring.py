@@ -12,7 +12,7 @@ def calculate_score(diagnostics: list[Diagnostic]) -> ScoreResult:
     for diag in diagnostics:
         if diag.severity == Severity.ERROR:
             unique_error_rules.add(diag.rule)
-        else:
+        elif diag.severity == Severity.WARNING:
             unique_warning_rules.add(diag.rule)
 
     score = 100

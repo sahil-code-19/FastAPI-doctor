@@ -19,24 +19,27 @@ def print_diagnostics(diagnostics: list[Diagnostic], verbose: bool = False):
         print(f"{GREEN}No issues found!{RESET}")
         return
 
-    # Group by rule
-    by_rule: dict[str, list[Diagnostic]] = {}
+    # Group by rule + severity so mixed-severity rules get separate headers
+    by_rule_severity: dict[tuple[str, str], list[Diagnostic]] = {}
     for diag in diagnostics:
-        by_rule.setdefault(diag.rule, []).append(diag)
+        key = (diag.rule, diag.severity.value)
+        by_rule_severity.setdefault(key, []).append(diag)
 
-    for rule, rule_diags in by_rule.items():
-        severity_icon = "X" if rule_diags[0].severity == Severity.ERROR else "!"
-        color = RED if rule_diags[0].severity == Severity.ERROR else YELLOW
+    for (rule, severity_value), rule_diags in by_rule_severity.items():
+        is_error = severity_value == Severity.ERROR.value
+        severity_icon = "X" if is_error else "!"
+        color = RED if is_error else YELLOW
 
         print(f"  {color}{severity_icon} {rule}{RESET} ({len(rule_diags)} issues)")
-        print(f"    {GRAY}{rule_diags[0].message}{RESET}")
+
+        for diag in rule_diags:
+            print(
+                f"    {color}→{RESET} {GRAY}{diag.file_path}:{diag.line}{RESET}  {diag.message}"
+            )
 
         if rule_diags[0].help:
             print(f"    {GRAY}-> {rule_diags[0].help}{RESET}")
 
-        if verbose:
-            for diag in rule_diags:
-                print(f"    {GRAY}{diag.file_path}:{diag.line}{RESET}")
         print()
 
 

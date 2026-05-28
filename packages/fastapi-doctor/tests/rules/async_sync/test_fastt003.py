@@ -136,7 +136,7 @@ def test_check_function_flags_async_no_await():
     tree = ast.parse(source)
     func_node = tree.body[0]
     diagnostics = rule.check_function(func_node, "test.py")
-    assert len(diagnostics) == 1, "Async function with no await should be flagged"
+    assert len(diagnostics) == 1, "Async CRUD function with no await should be flagged"
 
 
 def test_async_param_gives_warning_not_error():
