@@ -1,24 +1,24 @@
-# fastapi-doctor
+# fastapi-therapist
 
 Diagnose FastAPI codebases for security, performance, correctness, and architecture issues. Outputs a 0–100 health score.
 
 ## Installation
 
 ```bash
-pip install fastapi-doctor
+pip install fastapi-therapist
 ```
 
 ## Usage
 
 ```bash
 # Scan current directory with verbose output
-fastapi-doctor . --verbose
+fastapi-therapist . --verbose
 
 # Scan a specific project
-fastapi-doctor /path/to/fastapi/project --verbose
+fastapi-therapist /path/to/fastapi/project --verbose
 
 # Output only the score (useful for CI)
-fastapi-doctor . --score
+fastapi-therapist . --score
 ```
 
 ## Rules

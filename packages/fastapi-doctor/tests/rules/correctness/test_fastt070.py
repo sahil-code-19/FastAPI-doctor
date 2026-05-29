@@ -1,11 +1,11 @@
 import ast
 from pathlib import Path
 
-from fastapi_doctor.rules.correctness.fastt011_missing_status_code import (
+from fastapi_doctor.rules.correctness.fastt070_missing_status_code import (
     MissingStatusCodeRule,
 )
 
-FIXTURES = Path(__file__).parent.parent.parent / "fixtures" / "fastt011"
+FIXTURES = Path(__file__).parent.parent.parent / "fixtures" / "fastt070"
 
 
 def test_good_endpoints_no_diagnostics():
@@ -30,7 +30,7 @@ def test_bad_endpoints_detected():
     )
 
     for diag in diagnostics:
-        assert diag.rule == "fastapi-doctor/FASTT011"
+        assert diag.rule == "fastapi-doctor/FASTT070"
         assert diag.severity.value == "warning"
 
 

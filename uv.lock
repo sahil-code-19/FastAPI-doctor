@@ -9,8 +9,8 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "fastapi-doctor",
     "fastapi-doctor-workspace",
+    "fastapi-therapist",
 ]
 
 [[package]]
@@ -175,11 +175,6 @@ wheels = [
 ]
 
 [[package]]
-name = "fastapi-doctor"
-version = "0.1.0"
-source = { editable = "packages/fastapi-doctor" }
-
-[[package]]
 name = "fastapi-doctor-workspace"
 version = "0.1.0"
 source = { virtual = "." }
@@ -197,6 +192,11 @@ requires-dist = [{ name = "fastapi", extras = ["standard"], specifier = ">=0.136
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.0.3" }]
+
+[[package]]
+name = "fastapi-therapist"
+version = "0.1.0"
+source = { editable = "packages/fastapi-doctor" }
 
 [[package]]
 name = "fastar"

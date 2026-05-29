@@ -1,27 +1,20 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
 
 app = FastAPI()
 
 
-@app.post("/items")
-async def create_item():
-    """Missing status_code."""
-    return {}
+@app.post("/login", response_model=None)
+async def login(db: Session = Depends(get_db)):
+    return {"access_token": "abc123", "token_type": "bearer"}
 
 
-@app.put("/items/{id}")
-async def update_item(id: int):
-    """Missing status_code."""
-    return {}
+@app.get("/users/{id}", response_model=None)
+async def get_user(id: int, db: Session = Depends(get_db)):
+    user = db.query(User).first()
+    return user
 
 
-@app.delete("/items/{id}")
-async def delete_item(id: int):
-    """Missing status_code."""
-    return None
-
-
-@app.patch("/items/{id}")
-async def patch_item(id: int):
-    """Missing status_code."""
-    return {}
+@app.get("/config", response_model=None)
+async def get_config():
+    return {"secret_key": "sk-abc123", "api_key": "key-xyz"}
