@@ -10,12 +10,12 @@ from fastapi_doctor.models import Diagnostic, RuleDefinition, Severity
 
 @register_rule
 class MissingStatusCodeRule(Rule):
-    """Detect POST/PUT/PATCH/DELETE endpoints missing explicit status_code (FASTT011)."""
+    """Detect POST/PUT/PATCH/DELETE endpoints missing explicit status_code (FASTT070)."""
 
     @property
     def definition(self) -> RuleDefinition:
         return RuleDefinition(
-            id="fastapi-doctor/FASTT011",
+            id="fastapi-doctor/FASTT070",
             severity=Severity.WARNING,
             description="POST/PUT/PATCH/DELETE endpoint missing explicit status_code",
             recommendation="Add status_code parameter to the decorator (e.g., status_code=201 for POST)",

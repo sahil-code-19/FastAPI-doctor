@@ -15,7 +15,7 @@ async def create_item():
     return {"status": "created"}
 
 
-@app.get("/blocking")
+j@app.get("/blocking")
 def sync_endpoint():
     asyncio.run(sync_work())
     return {"status": "ok"}

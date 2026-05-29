@@ -10,7 +10,7 @@ RESET = "\033[0m"
 
 
 def print_header(version: str):
-    print(f"{BOLD}FastAPI Doctor{RESET} v{version}")
+    print(f"{BOLD}FastAPI Therapist{RESET} v{version}")
     print()
 
 
