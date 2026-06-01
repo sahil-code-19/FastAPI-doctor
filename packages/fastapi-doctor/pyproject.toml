@@ -1,6 +1,6 @@
 [project]
-name = "fastapi-doctor"
-version = "0.1.0"
+name = "fastapi-therapist"
+version = "0.1.1"
 description = "Diagnose FastAPI codebases for best practices"
 readme = "README.md"
 license = { text = "MIT" }
