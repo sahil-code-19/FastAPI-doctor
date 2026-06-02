@@ -52,12 +52,17 @@ def scan_main():
     )
     parser.add_argument("--score", action="store_true", help="Output only the score")
     parser.add_argument(
-        "-v", "--version", action="version", version=f"%(prog)s {VERSION}"
+        "--diff",
+        nargs="?",
+        const="main",
+        default=None,
+        help="Only scan files changed vs base branch (default: main)",
     )
     parser.add_argument(
-        "--verbose", action="store_true", help="Show all file locations"
+        "--staged",
+        action="store_true",
+        help="Only scan staged files (for pre-commit hooks)",
     )
-    parser.add_argument("--score", action="store_true", help="Output only the score")
 
     args = parser.parse_args()
 
@@ -87,11 +92,11 @@ def scan_main():
 
     result = scan_directory(directory, files=files)
     score_result = calculate_score(result.diagnostics)
-    
+
     if args.score:
         print(score_result.score)
         return
-    
+
     print_diagnostics(result.diagnostics, verbose=args.verbose)
     print()
     print_score(score_result)
