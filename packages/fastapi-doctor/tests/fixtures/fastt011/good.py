@@ -1,33 +1,30 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 app = FastAPI()
 
 
-@app.get("/items")
-async def get_items():
-    """GET doesn't need explicit status_code."""
-    return []
+class UserResponse(BaseModel):
+    id: int
+    name: str
 
 
-@app.post("/items", status_code=201)
-async def create_item():
-    """POST with explicit status_code."""
-    return {}
+class TokenResponse(BaseModel):
+    access_token: str
 
 
-@app.put("/items/{id}", status_code=200)
-async def update_item(id: int):
-    """PUT with explicit status_code."""
-    return {}
+@app.get("/users/{id}", response_model=UserResponse)
+async def get_user(id: int, db: Session = Depends(get_db)):
+    user = db.query(User).first()
+    return user
 
 
-@app.delete("/items/{id}", status_code=204)
-async def delete_item(id: int):
-    """DELETE with explicit status_code."""
-    return None
+@app.post("/login", response_model=TokenResponse)
+async def login(db: Session = Depends(get_db)):
+    return {"access_token": "abc", "token_type": "bearer"}
 
 
-@app.patch("/items/{id}", status_code=200)
-async def patch_item(id: int):
-    """PATCH with explicit status_code."""
-    return {}
+@app.post("/items", response_model=None)
+async def create_item(data: dict):
+    return {"status": "ok", "id": 1}

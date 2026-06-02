@@ -215,3 +215,4 @@ async def get_items(db = Depends(get_db)):
     assert diagnostics[0].severity == Severity.ERROR, (
         f"Expected ERROR for non-async Depends, got {diagnostics[0].severity}"
     )
+    
