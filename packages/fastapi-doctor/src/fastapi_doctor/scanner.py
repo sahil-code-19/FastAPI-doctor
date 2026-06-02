@@ -135,19 +135,16 @@ def trace_and_check(
     return extra_diagnostics
 
 
-def scan_directory(directory: Path, files: list[Path] | None = None) -> ScanResult:
+def scan_directory(directory: Path) -> ScanResult:
     start_time = time.perf_counter()
     all_diagnostics: list[Diagnostic] = []
     rule_instances = [rule_cls() for rule_cls in get_all_rules()]
 
-    if files is not None:
-        file_list = files
-    else:
-        file_list = find_python_files(directory)
+    files = find_python_files(directory)
 
     # Parse all files once, store ASTs for both main scan and trace pass
     parsed_files: dict[str, ast.Module] = {}
-    for file_path in file_list:
+    for file_path in files:
         source = file_path.read_text(encoding="utf-8")
         tree = parse_file(file_path)
         if tree is not None:
@@ -171,5 +168,5 @@ def scan_directory(directory: Path, files: list[Path] | None = None) -> ScanResu
     elapsed_ms = (time.perf_counter() - start_time) * 1000
 
     return ScanResult(
-        diagnostics=all_diagnostics, files_scanned=len(file_list), elapsed_ms=elapsed_ms
+        diagnostics=all_diagnostics, files_scanned=len(files), elapsed_ms=elapsed_ms
     )
