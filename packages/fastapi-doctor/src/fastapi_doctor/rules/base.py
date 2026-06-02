@@ -48,14 +48,16 @@ FASTAPI_DECORATOR_METHODS = {
 
 def is_fastapi_endpoint(
     func_node: ast.FunctionDef | ast.AsyncFunctionDef,
+    fastapi_decorator_methods: set | None = None,
 ) -> str | None:
     """Return the HTTP method name if the function is a FastAPI endpoint, else None."""
+    methods = fastapi_decorator_methods or FASTAPI_DECORATOR_METHODS
     for decorator in func_node.decorator_list:
         if not isinstance(decorator, ast.Call):
             continue
         if not isinstance(decorator.func, ast.Attribute):
             continue
-        if decorator.func.attr in FASTAPI_DECORATOR_METHODS:
+        if decorator.func.attr in methods:
             return decorator.func.attr
     return None
 
