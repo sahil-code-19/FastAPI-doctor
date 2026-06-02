@@ -5,11 +5,15 @@ description = "Monorepo for fastapi-doctor"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "fastapi-therapist",
     "fastapi[standard]>=0.136.3",
 ]
 
 [tool.uv.workspace]
 members = ["packages/*"]
+
+[tool.uv.sources]
+fastapi-therapist = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["packages/fastapi-doctor/tests"]
