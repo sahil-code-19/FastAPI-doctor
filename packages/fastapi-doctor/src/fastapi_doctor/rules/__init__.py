@@ -2,6 +2,8 @@
 from .async_sync import DbSessionInAsyncRule, SyncBlockingIORule
 from .correctness import MissingStatusCodeRule
 from .security import (
+    CorsWildcardCredentialsRule,
+    DebugTrueNonTestFile,
     HardcodedSecretsRule,
     MissingResponseModelRule,
     ResponseModelNoneRule,
@@ -9,7 +11,9 @@ from .security import (
 )
 
 __all__ = [
+    "CorsWildcardCredentialsRule",
     "DbSessionInAsyncRule",
+    "DebugTrueNonTestFile",
     "HardcodedSecretsRule",
     "MissingResponseModelRule",
     "MissingStatusCodeRule",
