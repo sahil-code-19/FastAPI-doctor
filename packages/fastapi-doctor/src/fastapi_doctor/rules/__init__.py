@@ -5,9 +5,11 @@ from .security import (
     CorsWildcardCredentialsRule,
     DebugTrueNonTestFile,
     HardcodedSecretsRule,
+    MissingHttpsRedirectMiddleware,
     MissingResponseModelRule,
     ResponseModelNoneRule,
     ReturnSqlalchemyBaseClass,
+    SqlFStringInjectionRule,
 )
 
 __all__ = [
@@ -15,9 +17,11 @@ __all__ = [
     "DbSessionInAsyncRule",
     "DebugTrueNonTestFile",
     "HardcodedSecretsRule",
+    "MissingHttpsRedirectMiddleware",
     "MissingResponseModelRule",
     "MissingStatusCodeRule",
     "ResponseModelNoneRule",
     "ReturnSqlalchemyBaseClass",
+    "SqlFStringInjectionRule",
     "SyncBlockingIORule",
 ]
