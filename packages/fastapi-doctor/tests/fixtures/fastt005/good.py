@@ -13,7 +13,7 @@ async def get_users():
 
 @app.get("/config")
 async def get_config():
-    async with await anyio.open_file("config.json") as f:
+    async with anyio.open_file("config.json") as f:
         data = await f.read()
     return {"config": data}
 

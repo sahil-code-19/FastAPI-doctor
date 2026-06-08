@@ -10,6 +10,7 @@ from .rules.base import (
     resolve_module_path,
 )
 from . import rules  # Import rules module to trigger @register_rule decorators
+from .config import load_config, should_skip_file, is_rule_suppressed
 
 SKIP_DIRS = [
     "__pycache__",
@@ -140,10 +141,16 @@ def scan_directory(directory: Path, files: list[Path] | None = None) -> ScanResu
     all_diagnostics: list[Diagnostic] = []
     rule_instances = [rule_cls() for rule_cls in get_all_rules()]
 
+    # Load and apply project config (suppressions, ignore patterns)
+    config = load_config(directory)
+
     if files is not None:
         file_list = files
     else:
         file_list = find_python_files(directory)
+
+    # Apply ignore.files patterns
+    file_list = [f for f in file_list if not should_skip_file(f, directory, config)]
 
     # Parse all files once, store ASTs for both main scan and trace pass
     parsed_files: dict[str, ast.Module] = {}
@@ -157,6 +164,8 @@ def scan_directory(directory: Path, files: list[Path] | None = None) -> ScanResu
     for file_path_str, tree in parsed_files.items():
         source = Path(file_path_str).read_text(encoding="utf-8")
         for rule in rule_instances:
+            if is_rule_suppressed(rule.definition.id, file_path_str, directory, config):
+                continue
             diagnostics = rule.check(tree, file_path_str, source)
             all_diagnostics.extend(diagnostics)
 
@@ -167,6 +176,13 @@ def scan_directory(directory: Path, files: list[Path] | None = None) -> ScanResu
         rule_instances,
     )
     all_diagnostics.extend(traced_diagnostics)
+
+    # Apply suppression to traced diagnostics as well
+    all_diagnostics = [
+        d
+        for d in all_diagnostics
+        if not is_rule_suppressed(d.rule, d.file_path, directory, config)
+    ]
 
     elapsed_ms = (time.perf_counter() - start_time) * 1000
 
