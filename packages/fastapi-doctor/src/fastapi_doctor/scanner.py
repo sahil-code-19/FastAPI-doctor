@@ -1,6 +1,9 @@
+import threading
 import ast
 import time
+import os
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from .models import Diagnostic, ScanResult
 from .rules.base import (
@@ -60,6 +63,17 @@ def build_function_catalog(
                 functions[node.name] = node
         catalog[file_path] = functions
     return catalog
+
+
+def _check_single_file(file_path_str, tree, source, rule_instances, directory, config):
+    """Runs in a worker thread — one file, all rules."""
+    file_diagnostics = []
+    for rule in rule_instances:
+        if is_rule_suppressed(rule.definition.id, file_path_str, directory, config):
+            continue
+        diagnostics = rule.check(tree, file_path_str, source)
+        file_diagnostics.extend(diagnostics)
+    return file_diagnostics
 
 
 def _resolve_callee_name(node: ast.Call) -> str | None:
@@ -152,26 +166,32 @@ def scan_directory(directory: Path, files: list[Path] | None = None) -> ScanResu
     # Apply ignore.files patterns
     file_list = [f for f in file_list if not should_skip_file(f, directory, config)]
 
+    # Cap workers at min(cpu_count, file_count, 8) for optimal throughput
+    workers = max(min(os.cpu_count() or 1, len(file_list), 8), 1)
+
     # Parse all files once, store ASTs for both main scan and trace pass
-    parsed_files: dict[str, ast.Module] = {}
+    parsed_files: dict[str, tuple[ast.Module, str]] = {}
     for file_path in file_list:
         source = file_path.read_text(encoding="utf-8")
         tree = parse_file(file_path)
         if tree is not None:
-            parsed_files[str(file_path)] = tree
+            parsed_files[str(file_path)] = (tree, source)
 
     # Main scan pass
-    for file_path_str, tree in parsed_files.items():
-        source = Path(file_path_str).read_text(encoding="utf-8")
-        for rule in rule_instances:
-            if is_rule_suppressed(rule.definition.id, file_path_str, directory, config):
-                continue
-            diagnostics = rule.check(tree, file_path_str, source)
-            all_diagnostics.extend(diagnostics)
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {
+            executor.submit(
+                _check_single_file, fp, tree, source, rule_instances, directory, config
+            ): fp
+            for fp, (tree, source) in parsed_files.items()
+        }
+        for future in as_completed(futures):
+            all_diagnostics.extend(future.result())
 
     # Import trace pass
+    trees_only = {path: tree for path, (tree, _) in parsed_files.items()}
     traced_diagnostics = trace_and_check(
-        parsed_files,
+        trees_only,
         str(directory),
         rule_instances,
     )
