@@ -63,6 +63,11 @@ def scan_main():
         action="store_true",
         help="Only scan staged files (for pre-commit hooks)",
     )
+    parser.add_argument(
+        "--audit",
+        action="store_true",
+        help="Ignore inline suppression comments — reveal all hidden issues",
+    )
 
     args = parser.parse_args()
 
@@ -90,7 +95,7 @@ def scan_main():
     if not args.score:
         print_header(VERSION)
 
-    result = scan_directory(directory, files=files)
+    result = scan_directory(directory, files=files, audit=args.audit)
     score_result = calculate_score(result.diagnostics)
 
     if args.score:
