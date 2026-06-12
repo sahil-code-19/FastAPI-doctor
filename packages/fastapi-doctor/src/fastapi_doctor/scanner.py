@@ -14,6 +14,8 @@ from .rules.base import (
 )
 from . import rules  # Import rules module to trigger @register_rule decorators
 from .config import load_config, should_skip_file, is_rule_suppressed
+from .inline_suppression import parse_inline_suppressions, is_diagnostic_suppressed
+from .file_ignore import build_file_ignore_spec, should_skip_file as should_skip_by_spec
 
 SKIP_DIRS = [
     "__pycache__",
@@ -35,11 +37,13 @@ PYTHON_EXTENSIONS = {".py"}
 
 
 def find_python_files(directory: Path) -> list[Path]:
+    """Walk directory, skipping pruned dirs before recursion for performance."""
     files = []
-    for path in directory.rglob("*.py"):
-        if any(part in SKIP_DIRS for part in path.parts):
-            continue
-        files.append(path)
+    for root, dirs, filenames in os.walk(str(directory)):
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+        for name in filenames:
+            if name.endswith(".py"):
+                files.append(Path(root) / name)
     return sorted(files)
 
 
@@ -73,6 +77,11 @@ def _check_single_file(file_path_str, tree, source, rule_instances, directory, c
             continue
         diagnostics = rule.check(tree, file_path_str, source)
         file_diagnostics.extend(diagnostics)
+    if config.respectInlineDisables:
+        suppressions = parse_inline_suppressions(source)
+        file_diagnostics = [
+            d for d in file_diagnostics if not is_diagnostic_suppressed(d, suppressions)
+        ]
     return file_diagnostics
 
 
@@ -150,21 +159,31 @@ def trace_and_check(
     return extra_diagnostics
 
 
-def scan_directory(directory: Path, files: list[Path] | None = None) -> ScanResult:
+def scan_directory(
+    directory: Path, files: list[Path] | None = None, audit: bool = False
+) -> ScanResult:
     start_time = time.perf_counter()
     all_diagnostics: list[Diagnostic] = []
     rule_instances = [rule_cls() for rule_cls in get_all_rules()]
 
     # Load and apply project config (suppressions, ignore patterns)
     config = load_config(directory)
+    if audit:
+        config.respectInlineDisables = False
 
     if files is not None:
         file_list = files
     else:
         file_list = find_python_files(directory)
 
-    # Apply ignore.files patterns
+    # Apply config-level ignore.files patterns
     file_list = [f for f in file_list if not should_skip_file(f, directory, config)]
+
+    # Apply file-level ignores (.gitignore, .ruff.toml, .prettierignore, .gitattributes)
+    file_ignore_spec = build_file_ignore_spec(directory)
+    file_list = [
+        f for f in file_list if not should_skip_by_spec(f, directory, file_ignore_spec)
+    ]
 
     # Cap workers at min(cpu_count, file_count, 8) for optimal throughput
     workers = max(min(os.cpu_count() or 1, len(file_list), 8), 1)
