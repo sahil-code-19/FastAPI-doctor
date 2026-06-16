@@ -14,6 +14,12 @@ class Rule(ABC):
         self, tree: ast.Module, file_path: str, source: str
     ) -> list[Diagnostic]: ...
 
+    def check_from_nodes(
+        self, nodes: list[ast.AST], tree: ast.Module, file_path: str, source: str
+    ) -> list[Diagnostic]:
+        """Shared AST walk optimization. Override to iterate cached nodes instead of ast.walk(tree)."""
+        return self.check(tree, file_path, source)
+
     def check_function(
         self, func_node: ast.FunctionDef | ast.AsyncFunctionDef, file_path: str
     ) -> list[Diagnostic]:

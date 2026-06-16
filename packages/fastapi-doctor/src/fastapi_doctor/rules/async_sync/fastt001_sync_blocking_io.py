@@ -78,3 +78,40 @@ class SyncBlockingIORule(Rule):
                         )
 
         return diagnostics
+
+    def check_from_nodes(self, nodes, tree, file_path, source):
+        diagnostics = []
+
+        for node in nodes:
+            if not isinstance(node, ast.AsyncFunctionDef):
+                continue
+
+            method_name = is_fastapi_endpoint(node)
+            if method_name is None:
+                continue
+
+            wrappers = collect_threadpool_wrappers(node)
+
+            for child in ast.walk(node):
+                if not isinstance(child, ast.Call):
+                    continue
+
+                call_sig = get_call_sig(child)
+                if call_sig is None:
+                    continue
+
+                if call_sig in BLOCKING_CALLS:
+                    if not is_inside_wrapper(child, wrappers):
+                        diagnostics.append(
+                            Diagnostic(
+                                severity=self.definition.severity,
+                                file_path=file_path,
+                                rule=self.definition.id,
+                                message=f"Blocking call '{call_sig[0]}.{call_sig[1]}()' inside async endpoint '{node.name}' without asyncio.to_thread()",
+                                line=child.lineno,
+                                column=child.col_offset,
+                                help=self.definition.recommendation,
+                            )
+                        )
+
+        return diagnostics

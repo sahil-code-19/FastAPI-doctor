@@ -40,6 +40,29 @@ class MissingResponseModelRule(Rule):
             )
         return diagnostics
 
+    def check_from_nodes(self, nodes, tree, file_path, source):
+        diagnostics = []
+        for node in nodes:
+            if not isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef)):
+                continue
+            method_name = is_fastapi_endpoint(node)
+            if method_name != "get":
+                continue
+            if self._has_response_model(node):
+                continue
+            diagnostics.append(
+                Diagnostic(
+                    severity=self.definition.severity,
+                    file_path=file_path,
+                    rule=self.definition.id,
+                    message=f"GET endpoint '{node.name}' missing response_model — untyped response",
+                    line=node.lineno,
+                    column=node.col_offset,
+                    help=self.definition.recommendation,
+                )
+            )
+        return diagnostics
+
     def check_function(
         self, func_node: ast.FunctionDef | ast.AsyncFunctionDef, file_path: str
     ) -> list[Diagnostic]:

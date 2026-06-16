@@ -63,6 +63,19 @@ class ResponseModelNoneRule(Rule):
             diagnostics.extend(self._check_single(node, file_path))
         return diagnostics
 
+    def check_from_nodes(self, nodes, tree, file_path, source):
+        diagnostics = []
+        for node in nodes:
+            if not isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef)):
+                continue
+            method_name = is_fastapi_endpoint(node)
+            if method_name is None:
+                continue
+            if not self._has_response_model_none(node):
+                continue
+            diagnostics.extend(self._check_single(node, file_path))
+        return diagnostics
+
     def check_function(
         self, func_node: ast.FunctionDef | ast.AsyncFunctionDef, file_path: str
     ) -> list[Diagnostic]:

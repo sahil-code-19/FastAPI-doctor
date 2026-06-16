@@ -23,6 +23,7 @@ class IgnoreConfig:
 class FastapiDoctorConfig:
     ignore: IgnoreConfig = field(default_factory=IgnoreConfig)
     lint: bool = True
+    ruff: bool = False
     verbose: bool = False
     diff: bool | str = True
     failOn: str = "error"

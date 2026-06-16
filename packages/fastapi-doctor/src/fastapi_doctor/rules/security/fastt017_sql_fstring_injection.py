@@ -81,6 +81,28 @@ class SqlFStringInjectionRule(Rule):
 
         return diagnostics
 
+    def check_from_nodes(self, nodes, tree, file_path, source):
+        diagnostics = []
+        for node in nodes:
+            if not isinstance(node, ast.JoinedStr):
+                continue
+
+            text = self._extract_text(node)
+            if self._is_sql(text):
+                diagnostics.append(
+                    Diagnostic(
+                        severity=Severity.ERROR,
+                        file_path=file_path,
+                        rule=self.definition.id,
+                        message="f-string SQL query detected — use parameterized queries instead",
+                        line=node.lineno,
+                        column=node.col_offset,
+                        help=self.definition.recommendation,
+                    )
+                )
+
+        return diagnostics
+
     def check_function(self, func_node, file_path):
         return []
 

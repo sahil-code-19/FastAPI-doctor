@@ -71,17 +71,22 @@ def build_function_catalog(
 
 def _check_single_file(file_path_str, tree, source, rule_instances, directory, config):
     """Runs in a worker thread — one file, all rules."""
+    nodes = list(ast.walk(tree))  # pre-walk once, share across all rules
     file_diagnostics = []
     for rule in rule_instances:
         if is_rule_suppressed(rule.definition.id, file_path_str, directory, config):
             continue
-        diagnostics = rule.check(tree, file_path_str, source)
+        diagnostics = rule.check_from_nodes(nodes, tree, file_path_str, source)
         file_diagnostics.extend(diagnostics)
     if config.respectInlineDisables:
         suppressions = parse_inline_suppressions(source)
         file_diagnostics = [
             d for d in file_diagnostics if not is_diagnostic_suppressed(d, suppressions)
         ]
+        from .near_miss_hints import generate_near_miss_hints
+
+        hints = generate_near_miss_hints(file_diagnostics, source, file_path_str)
+        file_diagnostics.extend(hints)
     return file_diagnostics
 
 
@@ -160,7 +165,11 @@ def trace_and_check(
 
 
 def scan_directory(
-    directory: Path, files: list[Path] | None = None, audit: bool = False
+    directory: Path,
+    files: list[Path] | None = None,
+    audit: bool = False,
+    mode: str = "full",
+    ruff_flag: bool | None = None,
 ) -> ScanResult:
     start_time = time.perf_counter()
     all_diagnostics: list[Diagnostic] = []
@@ -170,6 +179,7 @@ def scan_directory(
     config = load_config(directory)
     if audit:
         config.respectInlineDisables = False
+    ruff_enabled = ruff_flag if ruff_flag is not None else config.ruff
 
     if files is not None:
         file_list = files
@@ -216,6 +226,13 @@ def scan_directory(
     )
     all_diagnostics.extend(traced_diagnostics)
 
+    # Ruff integration — run ruff check on same files
+    if ruff_enabled:
+        from .ruff_integration import run_ruff_check
+
+        ruff_diags = run_ruff_check(file_list, directory)
+        all_diagnostics.extend(ruff_diags)
+
     # Apply suppression to traced diagnostics as well
     all_diagnostics = [
         d
@@ -226,5 +243,8 @@ def scan_directory(
     elapsed_ms = (time.perf_counter() - start_time) * 1000
 
     return ScanResult(
-        diagnostics=all_diagnostics, files_scanned=len(file_list), elapsed_ms=elapsed_ms
+        diagnostics=all_diagnostics,
+        files_scanned=len(file_list),
+        elapsed_ms=elapsed_ms,
+        mode=mode,
     )

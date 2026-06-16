@@ -31,6 +31,7 @@ class ScanResult:
     diagnostics: list[Diagnostic]
     files_scanned: int
     elapsed_ms: float
+    mode: str = "full"
 
 
 @dataclass
