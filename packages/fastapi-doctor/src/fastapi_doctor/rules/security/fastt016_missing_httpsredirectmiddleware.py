@@ -52,6 +52,41 @@ class MissingHttpsRedirectMiddleware(Rule):
 
         return []
 
+    def check_from_nodes(self, nodes, tree, file_path, source):
+        has_fastapi = False
+        has_https = False
+        fastapi_line = 0
+
+        for node in nodes:
+            if not isinstance(node, ast.Call):
+                continue
+
+            if isinstance(node.func, ast.Name) and node.func.id == "FastAPI":
+                has_fastapi = True
+                fastapi_line = node.lineno
+
+            if (
+                isinstance(node.func, ast.Attribute)
+                and node.func.attr == "add_middleware"
+            ):
+                if self._first_arg_is(node, "HTTPSRedirectMiddleware"):
+                    has_https = True
+
+        if has_fastapi and not has_https:
+            return [
+                Diagnostic(
+                    severity=Severity.WARNING,
+                    file_path=file_path,
+                    rule=self.definition.id,
+                    message="Missing HTTPSRedirectMiddleware — should be added for production",
+                    line=fastapi_line,
+                    column=0,
+                    help=self.definition.recommendation,
+                )
+            ]
+
+        return []
+
     def check_function(self, func_node, file_path):
         return []
 

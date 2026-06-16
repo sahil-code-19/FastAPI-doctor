@@ -5,13 +5,15 @@ from pathlib import Path
 from .scanner import scan_directory, SKIP_DIRS
 from .scoring import calculate_score
 from .reporter import print_header, print_diagnostics, print_score, print_summary
+from .json_reporter import format_json, format_json_compact, format_error_json
+from .annotations import print_annotations
 from .git_diff import (
     get_changed_files,
     get_staged_files,
     filter_python_files,
 )
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 
 
 def main():
@@ -68,48 +70,169 @@ def scan_main():
         action="store_true",
         help="Ignore inline suppression comments — reveal all hidden issues",
     )
+    parser.add_argument(
+        "--annotations",
+        action="store_true",
+        help="Output GitHub Actions workflow commands for inline PR annotations",
+    )
+    parser.add_argument(
+        "--ruff",
+        action="store_true",
+        default=None,
+        help="Include ruff linting results in the report",
+    )
+    parser.add_argument(
+        "--no-ruff",
+        action="store_false",
+        dest="ruff",
+        help="Skip ruff linting even if enabled in config",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output results as JSON (for CI/programmatic use)",
+    )
+    parser.add_argument(
+        "--json-compact",
+        action="store_true",
+        help="Output results as compact (single-line) JSON",
+    )
+    parser.add_argument(
+        "--fail-on",
+        choices=["error", "warning", "none"],
+        default="error",
+        help="Exit with non-zero if any diagnostic meets this severity (default: error)",
+    )
 
     args = parser.parse_args()
 
     directory = Path(args.directory).resolve()
     if not directory.is_dir():
-        print(f"Error: {directory} is not a directory", file=sys.stderr)
+        error_msg = f"Error: {directory} is not a directory"
+        if args.json or args.json_compact:
+            print(format_error_json(error_msg, str(directory), "full", VERSION))
+        else:
+            print(error_msg, file=sys.stderr)
         sys.exit(1)
+
+    # Determine scan mode
+    if args.staged:
+        mode = "staged"
+    elif args.diff is not None:
+        mode = "diff"
+    else:
+        mode = "full"
 
     if args.staged:
         changed = get_staged_files(directory)
         files = filter_python_files(changed, SKIP_DIRS)
         if not files:
-            print("No staged Python files to scan.", file=sys.stderr)
+            msg = "No staged Python files to scan."
+            if args.json or args.json_compact:
+                print(
+                    format_json_compact({}, str(directory), mode, VERSION)
+                    if args.json_compact
+                    else format_json(
+                        {"diagnostics": [], "files_scanned": 0, "elapsed_ms": 0},
+                        str(directory),
+                        mode,
+                        VERSION,
+                    )
+                )
+            else:
+                print(msg, file=sys.stderr)
             sys.exit(0)
     elif args.diff is not None:
         base = args.diff if args.diff != "main" else "main"
         changed = get_changed_files(directory, base=base)
         files = filter_python_files(changed, SKIP_DIRS)
         if not files:
-            print(f"No changed Python files vs {base}.", file=sys.stderr)
+            msg = f"No changed Python files vs {base}."
+            if args.json or args.json_compact:
+                dummy_result = type(
+                    "ScanResult",
+                    (),
+                    {
+                        "diagnostics": [],
+                        "files_scanned": 0,
+                        "elapsed_ms": 0,
+                        "mode": mode,
+                    },
+                )
+                print(
+                    format_json_compact(dummy_result, str(directory), mode, VERSION)
+                    if args.json_compact
+                    else format_json(dummy_result, str(directory), mode, VERSION)
+                )
+            else:
+                print(msg, file=sys.stderr)
             sys.exit(0)
     else:
         files = None
+        base_branch = None
 
-    if not args.score:
-        print_header(VERSION)
+    try:
+        if not (args.json or args.json_compact or args.score):
+            print_header(VERSION)
 
-    result = scan_directory(directory, files=files, audit=args.audit)
-    score_result = calculate_score(result.diagnostics)
+        result = scan_directory(
+            directory,
+            files=files,
+            audit=args.audit,
+            mode=mode,
+            ruff_flag=args.ruff,
+        )
+        score_result = calculate_score(result.diagnostics)
 
-    if args.score:
-        print(score_result.score)
-        return
+        if args.score:
+            print(score_result.score)
+            return
 
-    print_diagnostics(result.diagnostics, verbose=args.verbose)
-    print()
-    print_score(score_result)
-    print_summary(result.diagnostics, result.files_scanned, result.elapsed_ms)
+        if args.json:
+            print(
+                format_json(
+                    result,
+                    str(directory),
+                    mode,
+                    VERSION,
+                    base_branch=args.diff if mode == "diff" else None,
+                )
+            )
+        elif args.json_compact:
+            print(format_json_compact(result, str(directory), mode, VERSION))
+        elif args.annotations:
+            print_annotations(result.diagnostics, directory)
+        else:
+            print_diagnostics(result.diagnostics, verbose=args.verbose)
+            print()
+            print_score(score_result)
+            print_summary(result.diagnostics, result.files_scanned, result.elapsed_ms)
 
-    # Exit with error if there are errors
-    if any(d.severity.value == "error" for d in result.diagnostics):
-        sys.exit(1)
+        # Exit code based on fail-on
+        if args.fail_on == "error" and any(
+            d.severity.value == "error" for d in result.diagnostics
+        ):
+            sys.exit(1)
+        elif args.fail_on == "warning" and any(
+            d.severity.value in ("error", "warning") for d in result.diagnostics
+        ):
+            sys.exit(1)
+
+    except Exception as exc:
+        error_msg = f"{type(exc).__name__}: {exc}"
+        if args.json or args.json_compact:
+            print(
+                format_error_json(
+                    error_msg,
+                    str(directory),
+                    mode,
+                    VERSION,
+                    exception_type=type(exc).__name__,
+                )
+            )
+        else:
+            print(f"Error during scan: {error_msg}", file=sys.stderr)
+        sys.exit(2)
 
 
 if __name__ == "__main__":

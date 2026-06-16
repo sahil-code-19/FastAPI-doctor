@@ -41,6 +41,30 @@ class CorsWildcardCredentialsRule(Rule):
 
         return diagnostics
 
+    def check_from_nodes(self, nodes, tree, file_path, source):
+        diagnostics = []
+        for node in nodes:
+            if not isinstance(node, ast.Call):
+                continue
+
+            if self._is_cors_config(node):
+                if self._has_wildcard_origins(node) and self._has_credentials_true(
+                    node
+                ):
+                    diagnostics.append(
+                        Diagnostic(
+                            severity=Severity.ERROR,
+                            file_path=file_path,
+                            rule=self.definition.id,
+                            message="allow_origins=['*'] with allow_credentials=True — browsers will reject this as invalid CORS",
+                            line=node.lineno,
+                            column=node.col_offset,
+                            help=self.definition.recommendation,
+                        )
+                    )
+
+        return diagnostics
+
     def check_function(self, func_node, file_path):
         return []
 

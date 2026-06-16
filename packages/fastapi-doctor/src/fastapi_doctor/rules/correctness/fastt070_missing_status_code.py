@@ -55,6 +55,40 @@ class MissingStatusCodeRule(Rule):
 
         return diagnostics
 
+    def check_from_nodes(self, nodes, tree, file_path, source):
+        diagnostics = []
+
+        for node in nodes:
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+
+            method_name = is_fastapi_endpoint(node)
+            if method_name is None or method_name == "get":
+                continue
+
+            for decorator in node.decorator_list:
+                if isinstance(decorator, ast.Call) and method_name in (
+                    "post",
+                    "put",
+                    "patch",
+                    "delete",
+                ):
+                    if not self._has_status_code(decorator):
+                        diagnostics.append(
+                            Diagnostic(
+                                severity=Severity.WARNING,
+                                file_path=file_path,
+                                rule=self.definition.id,
+                                message=f"{method_name.upper()} endpoint '{node.name}' missing explicit status_code",
+                                line=node.lineno,
+                                column=node.col_offset,
+                                help=self.definition.recommendation,
+                            )
+                        )
+                    break
+
+        return diagnostics
+
     def _has_status_code(self, decorator: ast.Call) -> bool:
         for keyword in decorator.keywords:
             if keyword.arg == "status_code":

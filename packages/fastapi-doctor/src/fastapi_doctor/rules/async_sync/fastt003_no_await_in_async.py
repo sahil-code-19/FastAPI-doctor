@@ -41,6 +41,16 @@ class NoAwaitInAsyncRule(Rule):
             diagnostics.extend(self._check_single(node, file_path))
         return diagnostics
 
+    def check_from_nodes(self, nodes, tree, file_path, source):
+        diagnostics = []
+        for node in nodes:
+            if not isinstance(node, ast.AsyncFunctionDef):
+                continue
+            if is_fastapi_endpoint(node) is None:
+                continue
+            diagnostics.extend(self._check_single(node, file_path))
+        return diagnostics
+
     def check_function(
         self, func_node: ast.FunctionDef | ast.AsyncFunctionDef, file_path: str
     ) -> list[Diagnostic]:

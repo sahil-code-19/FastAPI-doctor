@@ -48,7 +48,7 @@ def get_staged_files(directory: Path) -> set[Path]:
 
 
 def _diff_against_base(git_root: Path, base: str) -> set[Path] | None:
-    """Try git diff against a branch name. Returns None if branch doesn't exist."""
+    """Find common ancestor with base, diff only branch-unique changes."""
     check = subprocess.run(
         ["git", "rev-parse", "--verify", base],
         capture_output=True,
@@ -66,7 +66,18 @@ def _diff_against_base(git_root: Path, base: str) -> set[Path] | None:
             return None
         base = f"origin/{base}"
 
-    return _diff_files(git_root, [base])
+    # Find common ancestor between base and HEAD
+    merge_base = subprocess.run(
+        ["git", "merge-base", base, "HEAD"],
+        capture_output=True,
+        text=True,
+        cwd=git_root,
+    )
+    if merge_base.returncode != 0:
+        return None
+
+    # Diff from merge-base to HEAD — only changes on this branch
+    return _diff_files(git_root, [merge_base.stdout.strip()])
 
 
 def _diff_files(git_root: Path, extra_args: list[str]) -> set[Path] | None:

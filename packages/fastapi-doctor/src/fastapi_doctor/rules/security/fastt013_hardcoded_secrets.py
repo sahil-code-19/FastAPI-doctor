@@ -99,6 +99,22 @@ class HardcodedSecretsRule(Rule):
 
         return diagnostics
 
+    def check_from_nodes(self, nodes, tree, file_path, source):
+        diagnostics = []
+
+        for node in nodes:
+            # ─── PASS A: AST structural detection ─────────────────────────
+            if isinstance(node, ast.Assign):
+                diagnostics.extend(self._check_ast_assignment(node, file_path))
+
+            # ─── PASS B: Regex pattern detection ─────────────────────────
+            if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                diagnostics.extend(
+                    self._check_regex_pattern(node.value, node, file_path)
+                )
+
+        return diagnostics
+
     def check_function(self, func_node, file_path):
         return []  # No import trace pass needed
 

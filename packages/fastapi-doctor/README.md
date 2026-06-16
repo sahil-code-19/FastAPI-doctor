@@ -23,6 +23,12 @@ fastapi-therapist . --staged
 # Output only the score (useful for CI)
 fastapi-therapist . --score
 
+# Audit mode — ignore all inline suppressions, reveal hidden issues
+fastapi-therapist . --audit
+
+# Audit mode — ignore all inline suppressions, reveal hidden issues
+fastapi-therapist . --audit
+
 # Install skill for AI coding agents (OpenCode, Claude, Cursor, etc.)
 fastapi-therapist install
 ```
@@ -45,6 +51,35 @@ rules = ["fastapi-doctor/FASTT001"]
 files = ["tests/**"]
 # omit 'rules' to suppress all rules for these files
 ```
+
+## Inline Suppression
+
+Suppress specific rules on specific lines without touching config:
+
+```python
+@app.post("/items")  # fastapi-doctor-disable-line FASTT070
+
+# fastapi-doctor-disable-next-line FASTT002
+@router.put("/items/{id}")
+async def update_item(...):
+    ...
+```
+
+Or skip all rules on a line:
+```python
+return user  # fastapi-doctor-disable-line
+```
+
+## File Ignores
+
+Respects existing project ignore files automatically:
+
+| Source | Example |
+|---|---|
+| `.gitignore` | `*.pyc`, `secrets.py` |
+| `ruff.toml` / `.ruff.toml` | `exclude = ["migrations/*"]` |
+| `pyproject.toml` (`[tool.ruff]`) | `exclude = ["generated/*"]` |
+| `.gitattributes` | `vendor/** linguist-vendored` |
 
 ## Rules
 

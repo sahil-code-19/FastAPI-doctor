@@ -28,6 +28,17 @@ class DebugTrueNonTestFile(Rule):
 
         return diagnostics
 
+    def check_from_nodes(self, nodes, tree, file_path, source):
+        diagnostics = []
+        for node in nodes:
+            if not isinstance(node, ast.Call):
+                continue
+
+            if self._is_fastapi_constructor(node) or self._is_uvicorn_run(node):
+                diagnostics.extend(self._check_debug_keyword(node, file_path))
+
+        return diagnostics
+
     def check_function(self, func_node, file_path):
         return []
 
