@@ -13,7 +13,7 @@ from .git_diff import (
     filter_python_files,
 )
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 
 
 def main():
