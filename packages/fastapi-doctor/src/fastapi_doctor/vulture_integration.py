@@ -72,12 +72,28 @@ def _is_pydantic_model(file_path: Path, line: int, name: str) -> bool:
     return False
 
 
-def _is_in_pydantic_class(file_path: Path, line: int, name: str) -> bool:
-    """Check if a 'variable' is actually a Pydantic/SQLAlchemy model field."""
+def _is_class_attribute(file_path: Path, line: int, name: str) -> bool:
+    """Check if a variable is a class-level attribute (model field, schema, config).
+    Class attributes are almost never dead code — they're used by ORMs/Pydantic."""
     try:
         tree = ast.parse(file_path.read_text(encoding="utf-8"))
     except (OSError, SyntaxError):
         return False
+
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.ClassDef):
+            continue
+        if not (node.lineno <= line <= node.end_lineno + 3):
+            continue
+        for child in node.body:
+            if isinstance(child, ast.Assign):
+                for target in child.targets:
+                    if isinstance(target, ast.Name) and target.id == name:
+                        return True
+            if isinstance(child, ast.AnnAssign):
+                if isinstance(child.target, ast.Name) and child.target.id == name:
+                    return True
+    return False
 
     for node in ast.walk(tree):
         if not isinstance(node, ast.ClassDef):
@@ -179,7 +195,7 @@ def run_vulture_check(files: list[Path], scan_root: Path) -> list[Diagnostic]:
         if item.typ == "variable":
             if item.name in ALEMBIC_VARS and "alembic" in str(filename):
                 continue
-            if _is_in_pydantic_class(file_path, item.first_lineno, item.name):
+            if _is_class_attribute(file_path, item.first_lineno, item.name):
                 continue
 
         rule = DEAD_CODE_RULES.get(item.typ, "fastapi-doctor/FASTT061")
