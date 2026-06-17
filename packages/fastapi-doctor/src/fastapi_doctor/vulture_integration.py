@@ -6,6 +6,7 @@ from .models import Diagnostic, Severity
 DEAD_CODE_RULES = {
     "class": "fastapi-doctor/FASTT060",
     "function": "fastapi-doctor/FASTT061",
+    "method": "fastapi-doctor/FASTT061",
     "import": "fastapi-doctor/FASTT063",
     "variable": "fastapi-doctor/FASTT063",
     "property": "fastapi-doctor/FASTT060",
@@ -153,6 +154,29 @@ def _is_model_base(base: ast.expr) -> bool:
     return False
 
 
+def _is_annotated_alias(file_path: Path, line: int, name: str) -> bool:
+    """Check if a variable is an Annotated type alias like CurrentUser = Annotated[User, Depends(...)]."""
+    try:
+        tree = ast.parse(file_path.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError):
+        return False
+
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        if node.lineno != line:
+            continue
+        for target in node.targets:
+            if isinstance(target, ast.Name) and target.id == name:
+                if isinstance(node.value, ast.Subscript):
+                    if (
+                        isinstance(node.value.value, ast.Name)
+                        and node.value.value.id == "Annotated"
+                    ):
+                        return True
+    return False
+
+
 def run_vulture_check(files: list[Path], scan_root: Path) -> list[Diagnostic]:
     """Run vulture dead code detection on given files, filtering false positives."""
     if not files:
@@ -178,7 +202,7 @@ def run_vulture_check(files: list[Path], scan_root: Path) -> list[Diagnostic]:
         # Filter false positives
         file_path = scan_root / filename
 
-        if item.typ == "function":
+        if item.typ in ("function", "method"):
             if item.name in ALEMBIC_FUNCTIONS:
                 continue
             if item.name == "dispatch":
@@ -196,6 +220,8 @@ def run_vulture_check(files: list[Path], scan_root: Path) -> list[Diagnostic]:
             if item.name in ALEMBIC_VARS and "alembic" in str(filename):
                 continue
             if _is_class_attribute(file_path, item.first_lineno, item.name):
+                continue
+            if _is_annotated_alias(file_path, item.first_lineno, item.name):
                 continue
 
         rule = DEAD_CODE_RULES.get(item.typ, "fastapi-doctor/FASTT061")
