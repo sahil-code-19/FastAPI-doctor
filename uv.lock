@@ -199,7 +199,7 @@ dev = [{ name = "pytest", specifier = ">=9.0.3" }]
 
 [[package]]
 name = "fastapi-therapist"
-version = "0.3.2"
+version = "0.3.3"
 source = { editable = "packages/fastapi-doctor" }
 dependencies = [
     { name = "pathspec" },

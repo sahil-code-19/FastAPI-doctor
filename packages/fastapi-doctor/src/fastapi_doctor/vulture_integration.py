@@ -82,12 +82,7 @@ def _is_in_pydantic_class(file_path: Path, line: int, name: str) -> bool:
     for node in ast.walk(tree):
         if not isinstance(node, ast.ClassDef):
             continue
-        has_pydantic_base = any(
-            (isinstance(b, ast.Name) and b.id == "BaseModel")
-            or (isinstance(b, ast.Attribute) and b.attr == "BaseModel")
-            for b in node.bases
-        )
-        if not has_pydantic_base:
+        if not any(_is_model_base(b) for b in node.bases):
             continue
         if not (node.lineno <= line <= node.end_lineno + 3):
             continue
@@ -99,6 +94,46 @@ def _is_in_pydantic_class(file_path: Path, line: int, name: str) -> bool:
             if isinstance(child, ast.AnnAssign):
                 if isinstance(child.target, ast.Name) and child.target.id == name:
                     return True
+    return False
+
+
+def _is_websocket_handler(file_path: Path, line: int, name: str) -> bool:
+    """Check if function is a WebSocket route handler."""
+    try:
+        tree = ast.parse(file_path.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError):
+        return False
+
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        if node.name != name:
+            continue
+        if not (node.lineno - 3 <= line <= node.end_lineno + 3):
+            continue
+        for decorator in node.decorator_list:
+            if isinstance(decorator, ast.Call):
+                if (
+                    isinstance(decorator.func, ast.Attribute)
+                    and decorator.func.attr == "websocket"
+                ):
+                    return True
+    return False
+
+
+def _is_model_base(base: ast.expr) -> bool:
+    """Check if a base class is Pydantic BaseModel or SQLAlchemy declarative Base."""
+    if isinstance(base, ast.Name) and base.id in (
+        "BaseModel",
+        "Base",
+        "DeclarativeBase",
+    ):
+        return True
+    if isinstance(base, ast.Attribute) and base.attr in ("BaseModel", "Base"):
+        return True
+    if isinstance(base, ast.Call):
+        if isinstance(base.func, ast.Name) and base.func.id in ("declarative_base",):
+            return True
     return False
 
 
@@ -130,7 +165,11 @@ def run_vulture_check(files: list[Path], scan_root: Path) -> list[Diagnostic]:
         if item.typ == "function":
             if item.name in ALEMBIC_FUNCTIONS:
                 continue
+            if item.name == "dispatch":
+                continue
             if _is_route_handler(file_path, item.first_lineno, item.name):
+                continue
+            if _is_websocket_handler(file_path, item.first_lineno, item.name):
                 continue
 
         if item.typ == "class":
