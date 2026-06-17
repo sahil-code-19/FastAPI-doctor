@@ -13,7 +13,7 @@ from .git_diff import (
     filter_python_files,
 )
 
-VERSION = "0.3.1"
+VERSION = "0.3.2"
 
 
 def main():
@@ -86,6 +86,18 @@ def scan_main():
         action="store_false",
         dest="ruff",
         help="Skip ruff linting even if enabled in config",
+    )
+    parser.add_argument(
+        "--vulture",
+        action="store_true",
+        default=None,
+        help="Run vulture dead code detection (default: on)",
+    )
+    parser.add_argument(
+        "--no-vulture",
+        action="store_false",
+        dest="vulture",
+        help="Skip vulture dead code detection",
     )
     parser.add_argument(
         "--json",
@@ -181,6 +193,7 @@ def scan_main():
             audit=args.audit,
             mode=mode,
             ruff_flag=args.ruff,
+            vulture_flag=args.vulture,
         )
         score_result = calculate_score(result.diagnostics)
 

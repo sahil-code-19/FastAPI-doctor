@@ -170,6 +170,7 @@ def scan_directory(
     audit: bool = False,
     mode: str = "full",
     ruff_flag: bool | None = None,
+    vulture_flag: bool | None = None,
 ) -> ScanResult:
     start_time = time.perf_counter()
     all_diagnostics: list[Diagnostic] = []
@@ -180,6 +181,7 @@ def scan_directory(
     if audit:
         config.respectInlineDisables = False
     ruff_enabled = ruff_flag if ruff_flag is not None else config.ruff
+    vulture_enabled = vulture_flag if vulture_flag is not None else config.vulture
 
     if files is not None:
         file_list = files
@@ -217,21 +219,26 @@ def scan_directory(
         for future in as_completed(futures):
             all_diagnostics.extend(future.result())
 
-    # Import trace pass
-    trees_only = {path: tree for path, (tree, _) in parsed_files.items()}
-    traced_diagnostics = trace_and_check(
-        trees_only,
-        str(directory),
-        rule_instances,
-    )
-    all_diagnostics.extend(traced_diagnostics)
+    # Parallel: import trace + ruff + vulture
+    with ThreadPoolExecutor(max_workers=3) as secondary:
+        trace_future = secondary.submit(
+            _run_trace_pass, parsed_files, directory, rule_instances
+        )
+        ruff_future = (
+            secondary.submit(_run_ruff, file_list, directory) if ruff_enabled else None
+        )
+        vulture_future = (
+            secondary.submit(_run_vulture, file_list, directory)
+            if vulture_enabled
+            else None
+        )
 
-    # Ruff integration — run ruff check on same files
-    if ruff_enabled:
-        from .ruff_integration import run_ruff_check
-
-        ruff_diags = run_ruff_check(file_list, directory)
-        all_diagnostics.extend(ruff_diags)
+        if trace_future:
+            all_diagnostics.extend(trace_future.result())
+        if ruff_future:
+            all_diagnostics.extend(ruff_future.result())
+        if vulture_future:
+            all_diagnostics.extend(vulture_future.result())
 
     # Apply suppression to traced diagnostics as well
     all_diagnostics = [
@@ -248,3 +255,20 @@ def scan_directory(
         elapsed_ms=elapsed_ms,
         mode=mode,
     )
+
+
+def _run_trace_pass(parsed_files, directory, rule_instances):
+    trees_only = {path: tree for path, (tree, _) in parsed_files.items()}
+    return trace_and_check(trees_only, str(directory), rule_instances)
+
+
+def _run_ruff(files, directory):
+    from .ruff_integration import run_ruff_check
+
+    return run_ruff_check(files, directory)
+
+
+def _run_vulture(files, directory):
+    from .vulture_integration import run_vulture_check
+
+    return run_vulture_check(files, directory)
