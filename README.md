@@ -30,7 +30,7 @@ fastapi-therapist .
 
 - note: `.` for current directory 
 
-[Demo ->](./docs/demo.gif)
+![Demo ->](./docs/demo.gif)
 
 ### 2. Install for agents
  
