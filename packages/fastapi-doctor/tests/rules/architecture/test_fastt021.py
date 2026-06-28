@@ -90,3 +90,59 @@ def ping():
     tree = ast.parse(source)
     diagnostics = rule.check(tree, "test.py", source)
     assert len(diagnostics) == 0
+
+
+def test_dict_mutation_without_global_flagged():
+    """Dict subscript mutation doesn't need 'global' keyword — should still be caught."""
+    rule = GlobalMutableStateRule()
+    source = """
+from fastapi import FastAPI
+app = FastAPI()
+global_mut = {}
+
+@app.get("/items")
+async def update():
+    global_mut["name"] = "sahil"
+    return global_mut
+"""
+    tree = ast.parse(source)
+    diagnostics = rule.check(tree, "test.py", source)
+    assert len(diagnostics) == 1
+    assert "global_mut" in diagnostics[0].message
+
+
+def test_list_append_without_global_flagged():
+    """List append doesn't need 'global' keyword — should still be caught."""
+    rule = GlobalMutableStateRule()
+    source = """
+from fastapi import FastAPI
+app = FastAPI()
+global_list = []
+
+@app.get("/items")
+def handler():
+    global_list.append("koshti")
+    return {}
+"""
+    tree = ast.parse(source)
+    diagnostics = rule.check(tree, "test.py", source)
+    assert len(diagnostics) == 1
+    assert "global_list" in diagnostics[0].message
+
+
+def test_set_add_without_global_flagged():
+    rule = GlobalMutableStateRule()
+    source = """
+from fastapi import FastAPI
+app = FastAPI()
+seen = set()
+
+@app.get("/track")
+def track():
+    seen.add("user_1")
+    return {}
+"""
+    tree = ast.parse(source)
+    diagnostics = rule.check(tree, "test.py", source)
+    assert len(diagnostics) == 1
+    assert "seen" in diagnostics[0].message

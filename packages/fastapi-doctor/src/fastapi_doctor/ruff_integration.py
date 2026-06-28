@@ -15,7 +15,7 @@ def run_ruff_check(files: list[Path], scan_root: Path) -> list[Diagnostic]:
     if not ruff_cmd:
         return []
 
-    cmd = ruff_cmd + ["check", "--output-format", "json"]
+    cmd = ruff_cmd + ["check", "--output-format", "json", "--force-exclude"]
     cmd += [str(f) for f in files]
 
     try:

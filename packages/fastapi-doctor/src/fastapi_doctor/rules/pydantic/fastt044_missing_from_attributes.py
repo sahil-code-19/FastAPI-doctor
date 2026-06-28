@@ -71,6 +71,12 @@ class MissingFromAttributesRule(Rule):
                                         kw.value
                                     ):
                                         return True
+
+                        elif isinstance(item.value, ast.Dict):
+                            for key, val in zip(item.value.keys, item.value.values):
+                                if isinstance(key, ast.Constant) and key.value == "from_attributes":
+                                    return isinstance(val, ast.Constant) and val.value == True
+                                
             if isinstance(item, ast.ClassDef) and item.name == "Config":
                 for sub in item.body:
                     if isinstance(sub, ast.Assign):

@@ -65,7 +65,7 @@ class RouteLevelAuthRule(Rule):
                     if decorator.func.attr not in ROUTE_METHODS:
                         continue
                     auth_funcs.update(self._extract_auth_from_decorator_deps(decorator))
-                auth_funcs.update(self._extract_auth_from_params(node))
+                    auth_funcs.update(self._extract_auth_from_params(node))
         return auth_funcs
 
     def _collect_router_auth_depends(self, tree: ast.Module) -> set[str]:
@@ -124,18 +124,21 @@ class RouteLevelAuthRule(Rule):
         return result
 
     def _get_depends_func(self, call_node: ast.Call) -> str | None:
-        if (
-            isinstance(call_node.func, ast.Attribute)
-            and call_node.func.attr == "Annotated"
-        ):
-            for arg in call_node.args[1:]:
-                if (
-                    isinstance(arg, ast.Call)
-                    and isinstance(arg.func, ast.Name)
-                    and arg.func.id == "Depends"
-                ):
-                    if arg.args and isinstance(arg.args[0], ast.Name):
-                        return arg.args[0].id
+        func = call_node.func
+        is_annotated = (
+            isinstance(func, ast.Name) and func.id == "Annotated"           # direct import
+            or isinstance(func, ast.Attribute) and func.attr == "Annotated" # typing.Annotated
+        )
+        if not is_annotated:
+            return None
+        for arg in call_node.args[1:]:
+            if (
+                isinstance(arg, ast.Call)
+                and isinstance(arg.func, ast.Name)
+                and arg.func.id == "Depends"
+            ):
+                if arg.args and isinstance(arg.args[0], ast.Name):
+                    return arg.args[0].id
         return None
 
     def _extract_auth_names(self, node: ast.expr) -> set[str]:

@@ -1,6 +1,6 @@
 import ast
 
-from fastapi_doctor.rules.architecture.fastt053_route_level_auth import (
+from fastapi_doctor.rules.dependency.fastt053_route_level_auth import (
     RouteLevelAuthRule,
 )
 from fastapi_doctor.models import Severity

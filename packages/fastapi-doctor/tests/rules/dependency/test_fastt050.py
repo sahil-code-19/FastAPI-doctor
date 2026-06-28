@@ -1,6 +1,6 @@
 import ast
 
-from fastapi_doctor.rules.architecture.fastt050_get_db_without_try_finally import (
+from fastapi_doctor.rules.dependency.fastt050_get_db_without_try_finally import (
     GetDbWithoutTryFinallyRule,
 )
 from fastapi_doctor.models import Severity

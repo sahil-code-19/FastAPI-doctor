@@ -19,7 +19,7 @@ KNOWN_AGENTS = [
     Agent(
         name="OpenCode",
         binary="opencode",
-        config_dir="",
+        config_dir=".opencode",
         skill_path_template=".opencode/skills/fastapi-therapist/SKILL.md",
         skill_format="markdown",
     ),
@@ -33,7 +33,7 @@ KNOWN_AGENTS = [
     Agent(
         name="Cursor",
         binary="cursor",
-        config_dir="",
+        config_dir=".cursor",
         skill_path_template=".cursor/rules/fastapi-therapist.md",
         skill_format="markdown",
     ),
@@ -54,7 +54,7 @@ KNOWN_AGENTS = [
     Agent(
         name="GitHub Copilot",
         binary="copilot",
-        config_dir="",
+        config_dir=".copilot",
         skill_path_template=".copilot/skills/fastapi-therapist/SKILL.md",
         skill_format="markdown",
     ),
@@ -144,6 +144,8 @@ def run_install(yes: bool = False, dry_run: bool = False, cwd: Path | None = Non
         cwd = Path.cwd()
 
     detected = detect_agents()
+
+    print(detected)
 
     if not detected:
         print("No AI agents detected on this system.", file=sys.stderr)

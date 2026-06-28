@@ -52,11 +52,13 @@ def get_items():
 def health():
     return {}
 
-app.include_router(users_router)
+    app.include_router(users_router)
 """
     tree = ast.parse(source)
     diagnostics = rule.check(tree, "test.py", source)
-    assert len(diagnostics) == 0
+    assert len(diagnostics) == 1, (
+        "5+ direct routes should trigger even with include_router"
+    )
 
 
 def test_bad_god_file_flagged():

@@ -1,6 +1,6 @@
 import ast
 
-from fastapi_doctor.rules.architecture.fastt034_background_tasks_celery import (
+from fastapi_doctor.rules.performance.fastt034_background_tasks_celery import (
     BackgroundTasksCeleryRule,
 )
 from fastapi_doctor.models import Severity

@@ -1,6 +1,6 @@
 import ast
 
-from fastapi_doctor.rules.architecture.fastt051_repeated_depends import (
+from fastapi_doctor.rules.dependency.fastt051_repeated_depends import (
     RepeatedDependsRule,
 )
 from fastapi_doctor.models import Severity

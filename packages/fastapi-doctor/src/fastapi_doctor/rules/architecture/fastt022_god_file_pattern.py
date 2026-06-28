@@ -26,10 +26,8 @@ class GodFilePatternRule(Rule):
             return diagnostics
 
         route_count = self._count_route_decorators(tree, fastapi_vars)
-        if route_count < 5:
-            return diagnostics
 
-        if self._has_include_router(tree):
+        if route_count < 5:
             return diagnostics
 
         for var_node in fastapi_vars:
@@ -108,9 +106,6 @@ class GodFilePatternRule(Rule):
 
         route_count = self._count_route_decorators_from_nodes(nodes, fastapi_vars)
         if route_count < 5:
-            return diagnostics
-
-        if self._has_include_router(tree):
             return diagnostics
 
         for var_node in fastapi_vars:

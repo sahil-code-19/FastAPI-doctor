@@ -1,6 +1,6 @@
 import ast
 
-from fastapi_doctor.rules.architecture.fastt040_pydantic_v1_validator import (
+from fastapi_doctor.rules.pydantic.fastt040_pydantic_v1_validator import (
     PydanticV1ValidatorRule,
 )
 from fastapi_doctor.models import Severity

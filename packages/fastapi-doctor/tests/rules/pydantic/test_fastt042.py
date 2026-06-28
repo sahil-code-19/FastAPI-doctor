@@ -1,6 +1,6 @@
 import ast
 
-from fastapi_doctor.rules.architecture.fastt042_dict_instead_of_model_dump import (
+from fastapi_doctor.rules.pydantic.fastt042_dict_instead_of_model_dump import (
     DictInsteadOfModelDumpRule,
 )
 from fastapi_doctor.models import Severity

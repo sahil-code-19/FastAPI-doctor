@@ -68,3 +68,39 @@ async def get_users():
     tree = ast.parse(source)
     diagnostics = rule.check(tree, "test.py", source)
     assert len(diagnostics) == 1
+
+
+def test_depends_in_non_endpoint_router_file_flagged():
+    """Depends() inside a non-endpoint function but in a router file — should be flagged."""
+    rule = DependsInBodyRule()
+    source = """
+from fastapi import FastAPI, Depends
+app = FastAPI()
+
+async def helper():
+    db = Depends(get_db)
+    return db
+
+@app.get("/items")
+async def get_items():
+    return await helper()
+"""
+    tree = ast.parse(source)
+    diagnostics = rule.check(tree, "test.py", source)
+    assert len(diagnostics) == 1
+    assert "helper" in diagnostics[0].message
+
+
+def test_depends_in_non_router_file_skipped():
+    """Depends() in a file with NO FastAPI endpoints — should NOT be flagged."""
+    rule = DependsInBodyRule()
+    source = """
+from fastapi import Depends
+
+async def helper():
+    db = Depends(get_db)
+    return db
+"""
+    tree = ast.parse(source)
+    diagnostics = rule.check(tree, "test.py", source)
+    assert len(diagnostics) == 0, "Non-router files should be skipped entirely"

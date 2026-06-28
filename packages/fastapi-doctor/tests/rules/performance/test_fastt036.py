@@ -1,6 +1,6 @@
 import ast
 
-from fastapi_doctor.rules.architecture.fastt036_missing_lru_cache import (
+from fastapi_doctor.rules.performance.fastt036_missing_lru_cache import (
     MissingLruCacheRule,
 )
 from fastapi_doctor.models import Severity
@@ -16,7 +16,7 @@ def get_settings():
     return {"debug": True}
 """
     tree = ast.parse(source)
-    diagnostics = rule.check(tree, "test.py", source)
+    diagnostics = rule.check(tree, "config.py", source)
     assert len(diagnostics) == 0
 
 
@@ -30,7 +30,7 @@ def get_config():
     return {"host": "localhost"}
 """
     tree = ast.parse(source)
-    diagnostics = rule.check(tree, "test.py", source)
+    diagnostics = rule.check(tree, "config.py", source)
     assert len(diagnostics) == 0
 
 
@@ -41,7 +41,7 @@ def load_data():
     return [1, 2, 3]
 """
     tree = ast.parse(source)
-    diagnostics = rule.check(tree, "test.py", source)
+    diagnostics = rule.check(tree, "config.py", source)
     assert len(diagnostics) == 0
 
 
@@ -53,7 +53,7 @@ def get_settings():
     return {"secret_key": os.environ["SECRET_KEY"]}
 """
     tree = ast.parse(source)
-    diagnostics = rule.check(tree, "test.py", source)
+    diagnostics = rule.check(tree, "config.py", source)
     assert len(diagnostics) == 1
     assert diagnostics[0].rule == "fastapi-doctor/FASTT036"
     assert diagnostics[0].severity == Severity.WARNING
@@ -66,5 +66,5 @@ def load_settings():
     return {"env": "production"}
 """
     tree = ast.parse(source)
-    diagnostics = rule.check(tree, "test.py", source)
+    diagnostics = rule.check(tree, "config.py", source)
     assert len(diagnostics) == 1

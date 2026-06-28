@@ -1,6 +1,6 @@
 import ast
 
-from fastapi_doctor.rules.architecture.fastt041_orm_mode_unused import (
+from fastapi_doctor.rules.pydantic.fastt041_orm_mode_unused import (
     OrmModeUnusedRule,
 )
 from fastapi_doctor.models import Severity

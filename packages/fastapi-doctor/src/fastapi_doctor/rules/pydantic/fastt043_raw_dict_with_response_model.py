@@ -36,7 +36,9 @@ class RawDictWithResponseModelRule(Rule):
                     continue
                 if child.value is None:
                     continue
-                if isinstance(child.value, (ast.Dict, ast.List)):
+                has_dict = self._has_dict_return(child.value)
+                
+                if has_dict:
                     diagnostics.append(
                         Diagnostic(
                             severity=self.definition.severity,
@@ -58,6 +60,15 @@ class RawDictWithResponseModelRule(Rule):
                 if keyword.arg == "response_model":
                     return True
         return False
+    
+    def _has_dict_return(self, child_val):
+        if isinstance(child_val, ast.Call) and isinstance(child_val.func, ast.Name):
+            if child_val.func.id == "dict":
+                return True
+        elif isinstance(child_val, (ast.Dict, ast.List)):
+            return True
+        else:
+            return False
 
     def check_from_nodes(self, nodes, tree, file_path, source):
         diagnostics = []
@@ -78,7 +89,8 @@ class RawDictWithResponseModelRule(Rule):
                     continue
                 if child.value is None:
                     continue
-                if isinstance(child.value, (ast.Dict, ast.List)):
+                has_dict = self._has_dict_return(child.value)
+                if has_dict:
                     diagnostics.append(
                         Diagnostic(
                             severity=self.definition.severity,

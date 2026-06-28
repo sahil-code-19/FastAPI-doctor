@@ -1,6 +1,6 @@
 import ast
 
-from fastapi_doctor.rules.architecture.fastt030_n_plus_one_query import (
+from fastapi_doctor.rules.performance.fastt030_n_plus_one_query import (
     NPlusOneQueryRule,
 )
 from fastapi_doctor.models import Severity

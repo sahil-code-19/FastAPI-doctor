@@ -1,58 +1,36 @@
-How to Run Against Your FastAPI Project
+# FastAPI-therapist
 
-1. First clone the repo.
-2. Go the project root and run command `uv sync`
-3. run the following commands at the project root:
+Your FastAPI codebase has a problem or coding agent writes not good enough FastAPI code. FastAPI-therapist deterministically scans codebase and find problems - acorss architecture, security, performance, dependency injection, and code health.
+
+[Docs ->](#) <!-- not available -->
+
+## Install
+
+### 1. Quick start
+
+Run this at your FastAPI project root to get an audit.
+
+#### Installation
+
+```bash
+uv add fastapi-therapist
 ```
-python -m fastapi_doctor.cli fastapi_project_path_that_you_want_scan
 
-- Full scan
-python3 -m fastapi_doctor.cli /path/to/your/fastapi-project
-- With file locations
-python3 -m fastapi_doctor.cli /path/to/your/fastapi-project --verbose
-- Score only
-python3 -m fastapi_doctor.cli /path/to/your/fastapi-project --score
-```
-
-SKILL.md
-
-```
----
-name: fastapi-therapist
-description: Use when finishing a feature, fixing a bug, before committing FastAPI code.
-version: "1.0.0"
----
-
-# FastAPI Therapist
-
-Scans FastAPI codebases for security, performance, correctness, and architecture issues. Outputs a 0–100 health score.
-
-## Setup
+OR
 
 ```bash
 pip install fastapi-therapist
 ```
 
-## After making FastAPI code changes:
-
-Run `fastapi-therapist . --verbose` and check the score did not regress.
-
-If the score dropped, fix the regressions before committing.
-
-## For general cleanup or code improvement:
-
-Run `fastapi-therapist . --verbose` to scan the full codebase. Fix issues by severity — errors first, then warnings.
-
-## Command
+#### Run tool
 
 ```bash
-fastapi-therapist . --verbose
+fastapi-therapist . 
 ```
 
-| Flag        | Purpose                                       |
-| ----------- | --------------------------------------------- |
-| `.`         | Scan current directory                        |
-| `--verbose` | Show affected files and line numbers per rule |
-| `--score`   | Output only the numeric score                 |
+- note: `.` for current directory 
 
-```
+`Main.mp4` <!-- swap for your demo GIF/video, same as react-doctor does -->
+
+### 2. Install for agents
+

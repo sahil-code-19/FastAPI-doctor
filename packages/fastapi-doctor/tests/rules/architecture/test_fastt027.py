@@ -81,3 +81,35 @@ def upload(file: bytes = File()):
     tree = ast.parse(source)
     diagnostics = rule.check(tree, "test.py", source)
     assert len(diagnostics) == 1
+
+
+def test_file_annotation_flagged():
+    """file: File (annotation directly as File class) should be flagged."""
+    rule = FileInsteadOfUploadFileRule()
+    source = """
+from fastapi import FastAPI, File
+app = FastAPI()
+
+@app.post("/upload")
+async def upload(file: File):
+    pass
+"""
+    tree = ast.parse(source)
+    diagnostics = rule.check(tree, "test.py", source)
+    assert len(diagnostics) == 1
+    assert "File" in diagnostics[0].message
+
+
+def test_uploadfile_annotation_not_flagged():
+    rule = FileInsteadOfUploadFileRule()
+    source = """
+from fastapi import FastAPI, UploadFile
+app = FastAPI()
+
+@app.post("/upload")
+async def upload(file: UploadFile):
+    pass
+"""
+    tree = ast.parse(source)
+    diagnostics = rule.check(tree, "test.py", source)
+    assert len(diagnostics) == 0

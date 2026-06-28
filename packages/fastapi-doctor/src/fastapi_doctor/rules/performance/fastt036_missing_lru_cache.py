@@ -1,9 +1,11 @@
 import ast
+from pathlib import Path
 
 from fastapi_doctor.rules.base import Rule, register_rule
 from fastapi_doctor.models import Diagnostic, RuleDefinition, Severity
 
 SETTINGS_FUNC_NAMES = {"get_settings", "get_config", "load_settings"}
+CONFIG_FILES = {"config.py", "settings.py", "conf.py"}
 
 
 @register_rule
@@ -20,7 +22,9 @@ class MissingLruCacheRule(Rule):
         )
 
     def check(self, tree: ast.Module, file_path: str, source: str) -> list[Diagnostic]:
-        diagnostics = []
+        if Path(file_path).name not in CONFIG_FILES:
+            return []
+
         for node in ast.walk(tree):
             if not isinstance(node, ast.FunctionDef):
                 continue
@@ -28,7 +32,7 @@ class MissingLruCacheRule(Rule):
                 continue
             if self._has_cache_decorator(node):
                 continue
-            diagnostics.append(
+            return [
                 Diagnostic(
                     severity=self.definition.severity,
                     file_path=file_path,
@@ -38,8 +42,8 @@ class MissingLruCacheRule(Rule):
                     column=node.col_offset,
                     help=self.definition.recommendation,
                 )
-            )
-        return diagnostics
+            ]
+        return []
 
     def _has_cache_decorator(self, func_node: ast.FunctionDef) -> bool:
         for decorator in func_node.decorator_list:
@@ -56,7 +60,9 @@ class MissingLruCacheRule(Rule):
         return False
 
     def check_from_nodes(self, nodes, tree, file_path, source):
-        diagnostics = []
+        if Path(file_path).name not in CONFIG_FILES:
+            return []
+
         for node in nodes:
             if not isinstance(node, ast.FunctionDef):
                 continue
@@ -64,7 +70,7 @@ class MissingLruCacheRule(Rule):
                 continue
             if self._has_cache_decorator(node):
                 continue
-            diagnostics.append(
+            return [
                 Diagnostic(
                     severity=self.definition.severity,
                     file_path=file_path,
@@ -74,8 +80,8 @@ class MissingLruCacheRule(Rule):
                     column=node.col_offset,
                     help=self.definition.recommendation,
                 )
-            )
-        return diagnostics
+            ]
+        return []
 
     def check_function(self, func_node, file_path):
         return []

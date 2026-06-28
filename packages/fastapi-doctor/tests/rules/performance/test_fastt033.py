@@ -1,6 +1,6 @@
 import ast
 
-from fastapi_doctor.rules.architecture.fastt033_cpu_bound_in_async import (
+from fastapi_doctor.rules.performance.fastt033_cpu_bound_in_async import (
     CpuBoundInAsyncRule,
 )
 from fastapi_doctor.models import Severity

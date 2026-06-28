@@ -1,6 +1,6 @@
 import ast
 
-from fastapi_doctor.rules.architecture.fastt043_raw_dict_with_response_model import (
+from fastapi_doctor.rules.pydantic.fastt043_raw_dict_with_response_model import (
     RawDictWithResponseModelRule,
 )
 from fastapi_doctor.models import Severity

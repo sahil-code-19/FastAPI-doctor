@@ -240,6 +240,10 @@ def scan_directory(
         if vulture_future:
             all_diagnostics.extend(vulture_future.result())
 
+    # Circular import detection (FASTT023 — cross-file check)
+    circular_diags = _check_circular_imports(parsed_files, directory)
+    all_diagnostics.extend(circular_diags)
+
     # Apply suppression to traced diagnostics as well
     all_diagnostics = [
         d
@@ -272,3 +276,121 @@ def _run_vulture(files, directory):
     from .vulture_integration import run_vulture_check
 
     return run_vulture_check(files, directory)
+
+
+def _check_circular_imports(
+    parsed_files: dict[str, tuple[ast.Module, str]], directory: Path
+) -> list[Diagnostic]:
+    """Detect circular imports between files (FASTT023)."""
+    from .models import Diagnostic, Severity
+
+    imports_by_file: dict[str, set[str]] = {}
+    for file_path, (tree, _) in parsed_files.items():
+        imports = _resolve_relative_imports(tree, file_path, parsed_files)
+        if imports:
+            imports_by_file[file_path] = imports
+
+    diagnostics = []
+    seen_pairs: set[tuple[str, str]] = set()
+
+    for file_a, imports_from_a in imports_by_file.items():
+        for file_b in imports_from_a:
+            if file_b not in imports_by_file:
+                continue
+            pair = tuple(sorted([file_a, file_b]))
+            if pair in seen_pairs:
+                continue
+            if file_a in imports_by_file.get(file_b, set()):
+                seen_pairs.add(pair)
+                a_rel = _rel_path(file_a, directory)
+                b_rel = _rel_path(file_b, directory)
+                diagnostics.append(
+                    Diagnostic(
+                        severity=Severity.ERROR,
+                        file_path=a_rel,
+                        rule="fastapi-doctor/FASTT023",
+                        message=f"circular import detected: '{a_rel}' ↔ '{b_rel}' (each imports from the other)",
+                        line=1,
+                        column=0,
+                        help="Extract shared symbols to a separate module to break the cycle",
+                    )
+                )
+
+    return diagnostics
+
+
+def _resolve_relative_imports(
+    tree: ast.Module, file_path: str, parsed_files: dict[str, tuple[ast.Module, str]]
+) -> set[str]:
+    """Resolve relative imports in a file to absolute file paths."""
+    resolved = set()
+    source_dir = Path(file_path).parent.resolve()
+
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.ImportFrom):
+            continue
+        if node.level == 0 or node.module is None:
+            continue
+        module = "." * node.level + node.module
+        resolved_path = _resolve_module_path(file_path, module, parsed_files)
+        if resolved_path:
+            resolved.add(resolved_path)
+    return resolved
+
+
+def _resolve_module_path(
+    file_path: str, module: str, parsed_files: dict[str, tuple[ast.Module, str]]
+) -> str | None:
+    """Resolve a relative import like '.module' to a file path in parsed_files."""
+    source_dir = Path(file_path).parent.resolve()
+    resolved_file_paths: dict[str, str] = {}
+    for key in parsed_files:
+        try:
+            resolved_file_paths[str(Path(key).resolve())] = key
+        except OSError:
+            pass
+
+    # Count leading dots for level
+    dots = 0
+    for ch in module:
+        if ch == ".":
+            dots += 1
+        else:
+            break
+
+    if dots == 0:
+        return None
+
+    # Go up for each dot beyond the first (first dot = current package)
+    current = source_dir
+    for _ in range(dots - 1):
+        current = current.parent
+
+    module_name = module[dots:]  # content after dots
+    parts = [p for p in module_name.split(".") if p]
+
+    if parts:
+        rel = current / "/".join(parts)
+    else:
+        rel = current
+
+    py_file = str(rel.with_suffix(".py").resolve())
+    if py_file in resolved_file_paths:
+        target = resolved_file_paths[py_file]
+        if target != file_path:
+            return target
+
+    init_file = str((rel / "__init__.py").resolve())
+    if init_file in resolved_file_paths:
+        target = resolved_file_paths[init_file]
+        if target != file_path:
+            return target
+
+    return None
+
+
+def _rel_path(absolute: str, directory: Path) -> str:
+    try:
+        return str(Path(absolute).relative_to(directory))
+    except ValueError:
+        return absolute

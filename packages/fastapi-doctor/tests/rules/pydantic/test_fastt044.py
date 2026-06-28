@@ -1,6 +1,6 @@
 import ast
 
-from fastapi_doctor.rules.architecture.fastt044_missing_from_attributes import (
+from fastapi_doctor.rules.pydantic.fastt044_missing_from_attributes import (
     MissingFromAttributesRule,
 )
 from fastapi_doctor.models import Severity

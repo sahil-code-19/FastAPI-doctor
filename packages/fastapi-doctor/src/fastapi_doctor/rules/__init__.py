@@ -1,30 +1,36 @@
 # Import all rule modules here to trigger @register_rule decorator
 from .architecture import (
-    BackgroundTasksCeleryRule,
-    CpuBoundInAsyncRule,
     DependsInBodyRule,
     DeprecatedOnEventRule,
-    DictInsteadOfModelDumpRule,
     FileInsteadOfUploadFileRule,
-    GetDbWithoutTryFinallyRule,
     GlobalMutableStateRule,
     GodFilePatternRule,
-    MissingFromAttributesRule,
-    MissingLruCacheRule,
-    NPlusOneQueryRule,
-    OrmModeUnusedRule,
-    PydanticV1ValidatorRule,
     RawDbConnectStartupRule,
-    RawDictWithResponseModelRule,
-    RepeatedDependsRule,
-    RouteLevelAuthRule,
-    SessionWithoutYieldRule,
-    UnboundedQueryRule,
-    UnindexedForeignKeyRule,
     UnusedRequestParamRule,
 )
 from .async_sync import DbSessionInAsyncRule, SyncBlockingIORule
 from .correctness import MissingStatusCodeRule
+from .dependency import (
+    GetDbWithoutTryFinallyRule,
+    RepeatedDependsRule,
+    RouteLevelAuthRule,
+    SessionWithoutYieldRule,
+)
+from .performance import (
+    BackgroundTasksCeleryRule,
+    CpuBoundInAsyncRule,
+    MissingJoinedloadRule,
+    MissingLruCacheRule,
+    NPlusOneQueryRule,
+    UnindexedForeignKeyRule,
+)
+from .pydantic import (
+    DictInsteadOfModelDumpRule,
+    MissingFromAttributesRule,
+    OrmModeUnusedRule,
+    PydanticV1ValidatorRule,
+    RawDictWithResponseModelRule,
+)
 from .security import (
     CorsWildcardCredentialsRule,
     DebugTrueNonTestFile,
@@ -52,6 +58,7 @@ __all__ = [
     "HardcodedSecretsRule",
     "MissingFromAttributesRule",
     "MissingHttpsRedirectMiddleware",
+    "MissingJoinedloadRule",
     "MissingLruCacheRule",
     "MissingResponseModelRule",
     "MissingStatusCodeRule",
@@ -67,7 +74,6 @@ __all__ = [
     "SessionWithoutYieldRule",
     "SqlFStringInjectionRule",
     "SyncBlockingIORule",
-    "UnboundedQueryRule",
     "UnindexedForeignKeyRule",
     "UnusedRequestParamRule",
 ]

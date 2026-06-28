@@ -1,6 +1,6 @@
 import ast
 
-from fastapi_doctor.rules.architecture.fastt052_session_without_yield import (
+from fastapi_doctor.rules.dependency.fastt052_session_without_yield import (
     SessionWithoutYieldRule,
 )
 from fastapi_doctor.models import Severity

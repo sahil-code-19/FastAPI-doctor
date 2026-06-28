@@ -58,7 +58,12 @@ class OrmModeUnusedRule(Rule):
         return False
 
     def _has_orm_mode(self, class_node: ast.ClassDef) -> bool:
+
         for item in class_node.body:
+
+            # For pydantic V1
+            # Class Config:
+            #   orm_mode = True
             if isinstance(item, ast.ClassDef) and item.name == "Config":
                 for sub in item.body:
                     if isinstance(sub, ast.Assign):
@@ -69,6 +74,29 @@ class OrmModeUnusedRule(Rule):
                                     and sub.value.value is True
                                 ):
                                     return True
+            # For pydantic v2
+            # model_config = ConfigDict(from_attributes=True)
+            # OR
+            # model_config = {"from_attributes": True}
+            else:
+                if not isinstance(item, ast.Assign):
+                    continue
+
+                if item.targets[0].id != "model_config":
+                    continue
+                
+                # For model_config = ConfigDict(from_attributes=True)
+                if isinstance(item.value, ast.Call):
+                    for kw in item.value.keywords:
+                        if kw.arg == "from_attributes":
+                            return kw.value.value is True
+                
+                # For  model_config = {"from_attributes": True}
+                elif isinstance(item.value, ast.Dict):
+                    for key, val in zip(item.value.keys, item.value.values):
+                        if isinstance(key, ast.Constant) and key.value == "from_attributes":
+                            return isinstance(val, ast.Constant) and val.value is True
+                    pass
         return False
 
     def _has_from_orm_call(self, tree: ast.Module) -> bool:
